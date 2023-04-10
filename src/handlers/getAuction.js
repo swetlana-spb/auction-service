@@ -3,10 +3,8 @@ import { ddbDocClient } from "../libs/ddbDocClient";
 import commonMiddleware from '../libs/commonMiddleware';
 import createError from "http-errors";
 
-async function getAuction(event, context) {
+export async function getAuctionById(id) {
   let auction;
-  const { id } = event.pathParameters;
-
   try {
     const result = await ddbDocClient.send(new GetCommand({
         TableName: process.env.AUCTIONS_TABLE_NAME,
@@ -21,6 +19,12 @@ async function getAuction(event, context) {
   if (!auction) {
     throw new createError.NotFound(`Auction with ID "${id}" not found!`);
   };
+  return auction;
+};
+
+async function getAuction(event, context) {
+  const { id } = event.pathParameters;
+  const auction = await getAuctionById(id);
 
   return {
     statusCode: 200,
