@@ -3,11 +3,18 @@ import { ddbDocClient } from "../libs/ddbDocClient";
 import commonMiddleware from '../libs/commonMiddleware';
 import createError from "http-errors";
 import { getAuctionById } from "./getAuction";
+import validatorMiddleware from '@middy/validator';
+import { transpileSchema } from '@middy/validator/transpile';
+import placeBidSchema from '../libs/schemas/placeBidSchema';
 
 async function placeBid(event, context) {
   const { id } = event.pathParameters;
   const { amount } = event.body;
   const auction = await getAuctionById(id);
+
+  if (auction.status !== 'OPEN') {
+    throw new createError.Forbidden(`You cannot bid on closed auctions!`);
+  };
 
   if (amount <= auction.hightestBid.amount) {
     throw new createError.Forbidden(`Your bid must be higher than ${auction.hightestBid.amount}!`);
@@ -38,4 +45,10 @@ async function placeBid(event, context) {
     };
 }
 
-export const handler = commonMiddleware(placeBid);
+export const handler = commonMiddleware(placeBid)
+.use(validatorMiddleware({
+  eventSchema: transpileSchema(placeBidSchema),
+  ajvOptions: {
+    strict: false,
+  },
+}));
