@@ -10,7 +10,16 @@ import placeBidSchema from '../libs/schemas/placeBidSchema';
 async function placeBid(event, context) {
   const { id } = event.pathParameters;
   const { amount } = event.body;
+  const { email } = event.requestContext.authorizer;
   const auction = await getAuctionById(id);
+
+  if (auction.seller === email) {
+    throw new createError.Forbidden(`You cannot bid on your own auctions!`);
+  }
+
+  if (auction.hightestBid.bidder === email) {
+    throw new createError.Forbidden(`You are already the highest bidder!`);
+  }
 
   if (auction.status !== 'OPEN') {
     throw new createError.Forbidden(`You cannot bid on closed auctions!`);
@@ -23,9 +32,10 @@ async function placeBid(event, context) {
   const params = {
     TableName: process.env.AUCTIONS_TABLE_NAME,
     Key: { id },
-    UpdateExpression: 'set hightestBid.amount = :amount',
+    UpdateExpression: 'set hightestBid.amount = :amount, hightestBid.bidder = :bidder',
     ExpressionAttributeValues: {
         ':amount': amount,
+        ':bidder': email,
     },
     ReturnValues: 'ALL_NEW',
   };
