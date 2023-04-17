@@ -9,7 +9,6 @@ provider:
   memorySize: 256
   stage: ${opt:stage, 'dev'}
   region: eu-north-1
-  accountId: ${aws:accountId}
   environment:
     AUCTIONS_TABLE_NAME: ${self:custom.AuctionsTable.name}
   iam:
@@ -61,7 +60,7 @@ functions:
 
 custom:
   Authorizer:
-    arn: "arn:aws:lambda:${self:provider.region}:${self:provider.accountId}:function:serverless-auth0-authorizer-${self:provider.stage}-auth"
+    arn: "arn:aws:lambda:${self:provider.region}:${aws:accountId}:function:serverless-auth0-authorizer-${self:provider.stage}-auth"
   AuctionsTable:
     name: !Ref AuctionsTable
     arn: !GetAtt AuctionsTable.Arn
